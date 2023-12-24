@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,49 +9,50 @@
 #include <sys/socket.h>
 #include <netinet/ip.h>
 
-// Linux syscalls are used here
-//
-// socket() syscalls returns an fd (integer that refers to something in the linux kernel)
-//
-// bind() and listen() - associates an address to a socket fd accepts connections to that
-// address
-//
-// accept() takes a listening fd when a client makes a connection and returns an fd that 
-// represents a socket
-//
-// read() recieves data from a TCP connection. 
-// write() sends data
-// close() destroys
-//
-//connect() is used on the client side to connect to the server
+
+// Combination of linux syscalls and the socket library used to create 
+// connection and bind sockets to linux fd's
 
 const size_t k_max_msg = 4096;
 
+
+// spits the message out so that its readable
 static void msg(const char *msg){
 	fprintf(stderr, "%s\n", msg);
 }
 
+// Safely exit the program - the program dies
 static void die(const char *msg){
 	int err = errno;
 	fprintf(stderr, "[%d] %s\n", err, msg);
 	abort();
 }
 
+// example function that simply reads from the connection fd and spits
+// it out onto the command line
 static void do_something(int connfd){
+	// buffer of 64 bytes
 	char rbuf[64] = {};
+	
+	// read system call - access kernel fd, provide a buffer, provide size of buffer
 	ssize_t n = read(connfd, rbuf, sizeof(rbuf) -1);
+	
+	// if n == 0 that means theres nothing in the kernel fd stream to access
 	if(n<0){
 		msg("read() error");
 		return;
 	}
-
+	
 	printf("client says: %s\n", rbuf);
-
+	
+	// second half of hello world sent from the client
 	char wbuf[] = "world";
+
+	// Sending it back to the client for printing
 	write(connfd, wbuf, strlen(wbuf));
 }
 
-// Reads from the kernel until n bytes are read
+// Reads from the kernel fd representing the connection
 static int32_t read_full(int fd, char *buf, size_t n){
 	
 	while(n>0){
@@ -69,7 +71,7 @@ static int32_t read_full(int fd, char *buf, size_t n){
 	return 0;
 }
 
-// Writes data back to the kernel
+// Writes data back to the kernel fd representing the connection
 static int32_t write_all(int fd, const char *buf, size_t n){
 	while(n>0){
 		ssize_t rv = write(fd, buf, n);
@@ -110,7 +112,7 @@ static int32_t one_request(int connfd){
 
 	uint32_t len = 0;
 
-	memcpy(&len, rbuf, 4); // assyme little endian
+	memcpy(&len, rbuf, 4); // assume little endian
 	
 	if(len > k_max_msg){
 		msg("too long");
@@ -135,7 +137,9 @@ static int32_t one_request(int connfd){
 	
 	const char reply[] = "world";
 	char wbuf[4 + sizeof(reply)];
+	
 	len = (uint32_t)strlen(reply);
+	
 	memcpy(wbuf, &len, 4);
 	memcpy(&wbuf[4], reply, len);
 	

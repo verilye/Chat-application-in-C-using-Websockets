@@ -15,10 +15,15 @@ static void die(const char *msg){
 }
 
 int main(){
+
+	// AF_INET is for IPv4 socket connections, IF_INET6 can be used for IPv6
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
+
+	// fd is of course a number associated with a process in the linux kernel
 	if (fd <0){
 		die("socket()");
 	}
+
 
 	struct sockaddr_in addr = {};
 	addr.sin_family = AF_INET;

@@ -112,6 +112,7 @@ static int32_t one_request(int connfd){
 
 	uint32_t len = 0;
 
+	//copy from memory to buffer
 	memcpy(&len, rbuf, 4); // assume little endian
 	
 	if(len > k_max_msg){
@@ -137,9 +138,7 @@ static int32_t one_request(int connfd){
 	
 	const char reply[] = "world";
 	char wbuf[4 + sizeof(reply)];
-	
 	len = (uint32_t)strlen(reply);
-	
 	memcpy(wbuf, &len, 4);
 	memcpy(&wbuf[4], reply, len);
 	

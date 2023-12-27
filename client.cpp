@@ -12,6 +12,11 @@
 
 const size_t k_msg_max= 4096;
 
+
+static void msg(const char* txt){
+	fprintf(stderr, "%s\n", txt);
+}
+
 static void die(const char *msg){
 	int err = errno;
 	fprintf(stderr, "[%d] %s\n", err, msg);
@@ -99,13 +104,36 @@ static int32_t query(int fd, const char *text){
 		if(errno ==0){
 			msg("EOF");
 		} else{
-			msg("read() error()")
+			msg("read() error()");
 		}
 
 		return err;
 	}
 
-	// print to console
+	// read buffer is now full
+	// now we read the header to check the length
+	// copy memory - memcpy(dest, src, size)
+	// check length of read buffer, spit error if too long
+	
+
+	// now we read for the length dictated by the header
+	memcpy(&len, rbuf, 4); // assume little endian? ntohls? maybe dont worry because personal project
+	if(len > k_msg_max){
+		msg("Too Long!");	
+		return -1;	//err 
+	}
+
+	err = read_full(fd,rbuf,len);
+	if(err){
+		msg("read() error");
+		return err;
+	}
+			
+	// use helper function to print msg
+	// add null char to end of the read buffer
+	rbuf[4+len] = '\0';
+	printf("Server says: %s\n", &rbuf[4]);
+	return 0;
 
 }
 

@@ -78,7 +78,7 @@ static int32_t query(int fd, const char *text){
 	
 	// set length of query, check to make sure its the right size
 	
-	int32_t len = (int32_t)strlen(text);
+	uint32_t len = (uint32_t)strlen(text);
 
 	if(len> k_msg_max){
 		return -1;
@@ -123,7 +123,7 @@ static int32_t query(int fd, const char *text){
 		return -1;	//err 
 	}
 
-	err = read_full(fd,rbuf,len);
+	err = read_full(fd,&rbuf[4],len);
 	if(err){
 		msg("read() error");
 		return err;
@@ -152,21 +152,31 @@ int main(){
 	addr.sin_family = AF_INET;
 	addr.sin_port = ntohs(1234);
 	addr.sin_addr.s_addr = ntohl(INADDR_LOOPBACK); //127.0.0.1
+	
 	int rv = connect(fd, (const struct sockaddr *)&addr, sizeof(addr));
 	if(rv){
 		die("connect");
 	}
-
-	char msg[] = "hello";
-	write(fd, msg, strlen(msg));
-
-	char rbuf[64] = {};
-	ssize_t n = read(fd, rbuf, sizeof(rbuf) -1);
-	if(n <0){
- 		die("read");
+	
+	// test requests
+	
+	int32_t err = query(fd,"hello1");
+	if(err){
+		goto L_DONE;
 	}
-	 
-	printf("server says: %s\n", rbuf);
+
+	err = query(fd,"hello2");
+	if(err){
+		goto L_DONE;
+	}
+
+	err = query(fd, "hello3");
+	if(err){
+		goto L_DONE;
+	}
+
+L_DONE:
+ 
 	close(fd);
 	return 0;
 

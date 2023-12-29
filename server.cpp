@@ -28,30 +28,6 @@ static void die(const char *msg){
 	abort();
 }
 
-// example function that simply reads from the connection fd and spits
-// it out onto the command line
-static void do_something(int connfd){
-	// buffer of 64 bytes
-	char rbuf[64] = {};
-	
-	// read system call - access kernel fd, provide a buffer, provide size of buffer
-	ssize_t n = read(connfd, rbuf, sizeof(rbuf) -1);
-	
-	// if n == 0 that means theres nothing in the kernel fd stream to access
-	if(n<0){
-		msg("read() error");
-		return;
-	}
-	
-	printf("client says: %s\n", rbuf);
-	
-	// second half of hello world sent from the client
-	char wbuf[] = "world";
-
-	// Sending it back to the client for printing
-	write(connfd, wbuf, strlen(wbuf));
-}
-
 // Reads from the kernel fd representing the connection
 static int32_t read_full(int fd, char *buf, size_t n){
 	
@@ -182,9 +158,6 @@ int main(){
 			continue; // error
 		}
 		
-	
-		do_something(connfd);
-
 		//Read through one request using the linux system code tied to connfd
 		while(true){
 			int32_t err = one_request(connfd);

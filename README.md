@@ -1,6 +1,9 @@
 ## NO-SQL database programmed in C!
-Training in the dark arts of networking and data management.
 
-### Compile Commands
-clang -Wall -Wextra -O2 -g server.cpp -o server
-clang -Wall -Wextra -2 -g client.cpp -o client
+Im approaching this project with a renewed learning vigour. I copied
+some code from the book Redis from scratch but feel like that was
+mostly useless as a learning excersise as it lacked the tacticle feel
+of designing and writing code for myself.
+
+My new approach will be understanding concepts and coming up with code
+solutions myself: get ready for some shocking spaghetti

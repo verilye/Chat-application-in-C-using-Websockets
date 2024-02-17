@@ -6,11 +6,11 @@
 #include <netdb.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <unistd.h>
 
 #define PORT "3490"
 #define MAXDATASIZE 100 
-
 
 // Helper function to convert sockaddr address into human readable IPv4 or IPV6
 void *get_in_addr(struct sockaddr *sa){
@@ -23,18 +23,36 @@ void *get_in_addr(struct sockaddr *sa){
 	return  &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-// The aim is to connect to the port specified on the command line and return what the server says
+
+void printMsg(ssize_t length, char * buffer){
+
+	buffer[length] = '\0';
+	printf("%s",buffer);
+
+}
+
+void handleUserInput(int sockfd){
+
+	char buffer[MAXDATASIZE];
+
+	while(1){
+		printf("User Input:");
+		if(fgets(buffer, MAXDATASIZE, stdin)){		
+			send(sockfd, buffer,strlen(buffer), 0);	
+		}
+	}
+}
 
 int main (int argc, char *argv[]){
+
 	
-	// Get addr info
+	// Get addr info in a linked list
 	// loop through and select socket
-	// bind and then free up addrinfo linked list
-	// listen for user input 
+	// bind() and then free up addrinfo linked list
+	// listen() for user input 
 
 	int status, sockfd, numbytes;
 	int yes = 1;
-	char buf[MAXDATASIZE];
 	char s[INET6_ADDRSTRLEN];
 
 	// hints is the desired parameters
@@ -88,17 +106,37 @@ int main (int argc, char *argv[]){
 	//Frees the linked list 
 	freeaddrinfo(head);
 
-	// recv input
+	// An fd_set is used here for I/O multiplexing. We are going to swap
+	// between user input and readin from the server using select()
+	fd_set readfds;
+	pid_t pid = fork();
+
+	if(pid<0){
+		// if fork fails, exit program
+		perror("Fork failed");
+		exit(EXIT_FAILURE);
+
+	}else if(pid == 0){
+		// if child process, close socket and accept user input
+		handleUserInput(sockfd);
+
+	}else{
+		// if parent process, accept data from socket and update in real time
+		char buffer[MAXDATASIZE];
+		while(1){
 	
-	if((numbytes = recv(sockfd,buf, MAXDATASIZE-1,0)) ==-1){
-		perror("recv");
-		exit(1);
+			// get size of the buffer returned by recv 
+			ssize_t bytes_read = recv(sockfd, buffer, MAXDATASIZE-1,0);
+			if(bytes_read > 0){		
+				//print msg
+				printMsg(bytes_read, buffer);
+			}
+		}
 	}
+
 	
-	buf[numbytes] = '\0';
 
-	printf("client:recieved '%s'\n",buf);
-
+	
 	close(sockfd);
 
 	return 0;
